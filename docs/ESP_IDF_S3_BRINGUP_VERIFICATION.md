@@ -88,12 +88,32 @@ a serial device.** Help and binary inspection do not test hardware commands.
 paths and relative documentation links are checked before publication. No
 generated binaries, backups, keys, certificates or credentials are committed.
 
-## Remote CI
+## Remote CI: PASS
 
 The workflow retains both original native target builds and host tests and adds
 an independent S3 diagnostic build/size/isolation job in official
-`espressif/idf:v5.5.6`. Results are pending publication/run at this revision and
-will be recorded before handoff; a workflow definition is not a passing run.
+`espressif/idf:v5.5.6`. Both the
+[push run](https://github.com/pagui85/splitflap/actions/runs/42512982791) and
+[pull-request run](https://github.com/pagui85/splitflap/actions/runs/42513039248)
+completed all four jobs successfully on implementation commit
+`dd1b5c54c9f4dfe558c16b32c018f78c721e7fce`. Final follow-up edits only clarify
+documentation and record these results.
+
+| Job | Push | Pull request |
+| --- | --- | --- |
+| `build (esp32)` | PASS | PASS |
+| `build (esp32s3)` | PASS | PASS |
+| `protocol-tests` (existing + new host suites) | PASS | PASS |
+| `s3-bringup` (diagnostic build/size/stability/isolation) | PASS | PASS |
+
+Fetched logs confirm GNU C/C++ 14.2.0, Python 3.12.3, matching local app and
+bootloader sizes for all three builds, passing partition checks and no native
+compiler warnings/errors in the push logs. The diagnostic job also compares
+SHA256 hashes of binary, ELF and generated UTC header across size/rebuild and
+passes the isolation/embedded-timestamp check. Host logs contain the new core
+PASS and metadata unittest OK plus all existing HAL/register PASS messages.
+These results do not establish physical UART/memory/boot behavior or the status
+of inherited electronics/legacy PlatformIO/3D/JS jobs.
 
 ## Hardware limits and outstanding observations
 

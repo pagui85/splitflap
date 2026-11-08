@@ -165,7 +165,8 @@ Console history has eight entries in RAM only, with no filesystem history file.
 - Heap totals/free/largest-block values describe runtime allocator availability,
   not a measurement of all physical internal SRAM or a memory stress test.
 
-No MAC, unique flash serial, credentials or key material are printed. Paste the
+The firmware's `info` report prints no MAC, unique flash serial, credentials or
+key material (external esptool preflight output can include a MAC). Paste the
 complete `info` block, `time` output and any boot errors into ChatGPT. Include the
 board/module marking separately when available; `info` cannot discover a PCB's
 exact header routing.
