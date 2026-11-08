@@ -91,12 +91,28 @@ conditions still need separate validation.
   all documentation-relative links and credential/build ignore rules are checked.
   No build output, credential or actual certificate/key material is staged.
 
-## CI
+## Remote CI: PASS for both targets and host tests
 
 The updated workflow has a native ESP32/ESP32-S3 build matrix plus a host-test
 job, uses official `espressif/idf:v5.5.6` and checks the exact SDK commit.
-Remote results are pending publication/run at this report revision and will be
-updated before handoff. A workflow definition alone is not a CI pass.
+Both the [push run](https://github.com/pagui85/splitflap/actions/runs/42504957831)
+and [pull-request run](https://github.com/pagui85/splitflap/actions/runs/42505004592)
+completed all three jobs successfully on implementation commit
+`dfa51a80d852a12835ad7e0c7ff9e9c33c967f99`. Final follow-up changes to this report
+are documentation only.
+
+| CI job | Push | Pull request |
+| --- | --- | --- |
+| `build (esp32)` | PASS | PASS |
+| `build (esp32s3)` | PASS | PASS |
+| `protocol-tests` (register/pin vectors + both HAL host models) | PASS | PASS |
+
+Fetched native job logs confirm GNU C/C++ 14.2.0, Python 3.12.3, matching local
+app sizes (`0x264b0` / `0x2cc70`), matching bootloader sizes (`0x6590` / `0x4ff0`)
+and passing partition checks. Host job logs contain all three PASS messages
+quoted above. No native compiler warnings/errors were found in the fetched push
+build logs. These CI results do not establish success for inherited legacy
+PlatformIO/electronics/3D/JS workflows or hardware compatibility.
 
 ## Outstanding owner gates
 
