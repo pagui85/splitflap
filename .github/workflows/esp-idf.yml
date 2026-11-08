@@ -1,0 +1,34 @@
+name: Native ESP-IDF scaffold
+
+on:
+  push:
+    branches: [feature/esp-idf-modern]
+    paths:
+      - 'firmware/esp-idf/**'
+      - '.github/workflows/esp-idf.yml'
+  pull_request:
+    paths:
+      - 'firmware/esp-idf/**'
+      - '.github/workflows/esp-idf.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    container: espressif/idf:v5.5.6
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Verify SDK and build without credentials
+        shell: bash
+        working-directory: firmware/esp-idf
+        run: |
+          . "$IDF_PATH/export.sh"
+          test "$(git -C "$IDF_PATH" rev-parse HEAD)" = "880a203ae603d08a94d06aa01e0d6761958e5e9e"
+          idf.py --version
+          idf.py set-target esp32
+          idf.py build
+          idf.py size
