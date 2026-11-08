@@ -52,7 +52,7 @@ Only the scaffold's generated build directory was removed and configuration and
 build were rerun successfully. No SDK, legacy source or security settings were
 patched to obtain this pass.
 
-## Legacy build: pending dependency installation
+## Legacy Chainlink build: PASS
 
 Attempted from repository root using PlatformIO Core 6.2.0/Python 3.12.14:
 
@@ -60,12 +60,29 @@ Attempted from repository root using PlatformIO Core 6.2.0/Python 3.12.14:
 python -m platformio run -e chainlink
 ```
 
-The original `espressif32@3.4.0`, toolchain `2.50200.97` and Arduino framework
-`3.10006.210326` installed. PlatformIO rejected checksum mismatches from package
-mirrors and obtained these packages from alternate mirrors without disabling
-validation. Installation of `tool-esptoolpy ~1.30100.0` is still in progress at
-this report revision. **No legacy compilation pass is claimed.** This section
-will be updated with the final attempted build result before handoff.
+The command exited **0**, compiling/linking the unchanged legacy application and
+generating `firmware.bin` in 672.21 seconds including dependency installation:
+
+```text
+RAM:   10.2% (used 33276 bytes from 327680 bytes)
+Flash: 30.3% (used 397474 bytes from 1310720 bytes)
+[SUCCESS] Took 672.21 seconds
+chainlink SUCCESS 00:11:12.207
+```
+
+Generated `.bin` size: **397584 bytes**. Build metadata was
+`58bebeefbf35d0f8806b8af0802c6422d9452e5b-dirty` because this report was being
+updated; all legacy inputs were unchanged. Only `chainlink` was built, not
+`chainlink_ota`, Base, tester or custom variants.
+
+Resolved packages: `espressif32@3.4.0`, GCC 5.2.0/toolchain `2.50200.97`, Arduino
+framework `3.10006.210326` (1.0.6), esptool package `1.30100.210531` (3.1.0),
+TFT_eSPI 2.4.25, PubSubClient 2.8.0, PacketSerial 1.4.0 and Nanopb 0.4.6+4.
+PlatformIO rejected checksum mismatches from initial package mirrors and obtained
+packages from alternate mirrors without disabling validation. There were 15
+compiler warnings in unchanged legacy/dependency sources: unused layout helper,
+unused variables in TFT_eSPI, and incompatible pointer initialization in the
+Arduino core SPI implementation. No warnings were fixed by altering legacy code.
 
 ## Isolation and review checks
 
@@ -85,9 +102,20 @@ will be updated with the final attempted build result before handoff.
   allocation failure, event saturation and task stack margin remain untested at
   runtime.
 
-Native GitHub Actions CI is provided separately from legacy CI. Remote run
-status is reported in the draft PR; adding the workflow is not itself evidence
-of a successful remote build.
+## Native remote CI: PASS
+
+Both the [push build](https://github.com/pagui85/splitflap/actions/runs/42500443624)
+and [PR build](https://github.com/pagui85/splitflap/actions/runs/42500472277)
+completed successfully on implementation commit
+`58bebeefbf35d0f8806b8af0802c6422d9452e5b`. The workflow runs on
+`ubuntu-24.04` in the official `espressif/idf:v5.5.6` container, verifies the SDK
+commit, then runs target configuration, build and size. Remote logs confirm
+Python 3.12.3, ESP-IDF v5.5.6, the same `0x26430` app and `0x6590` bootloader
+sizes, and successful partition-size checks. This independently verifies a
+clean checkout/container build; it is not a hardware or EAP-TLS test.
+
+These native results do not establish success for the separate, unmodified
+legacy PlatformIO/electronics/3D/JS workflows.
 
 ## Remaining gates
 
