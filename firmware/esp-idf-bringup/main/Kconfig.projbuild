@@ -1,0 +1,22 @@
+menu "Standalone diagnostics (reported pins only; never activated)"
+    config BRINGUP_PIN_MOSI
+        int "Reported Chainlink MOSI assignment (-1 unassigned)"
+        range -1 48
+        default -1
+    config BRINGUP_PIN_MISO
+        int "Reported Chainlink MISO assignment (-1 unassigned)"
+        range -1 48
+        default -1
+    config BRINGUP_PIN_CLOCK
+        int "Reported Chainlink clock assignment (-1 unassigned)"
+        range -1 48
+        default -1
+    config BRINGUP_PIN_LATCH
+        int "Reported Chainlink latch assignment (-1 unassigned)"
+        range -1 48
+        default -1
+    config BRINGUP_PIN_OE
+        int "Reported optional OE assignment (-1 unassigned)"
+        range -1 48
+        default -1
+endmenu

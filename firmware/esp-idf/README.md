@@ -1,5 +1,9 @@
 # Native ESP-IDF diagnostic application — ESP32 and ESP32-S3
 
+For **standalone USB-UART board identification and an interactive console**, use
+the separate [milestone 3 bring-up application](../esp-idf-bringup/README.md).
+This milestone 2 application and its inactive HAL remain unchanged.
+
 This isolated C++/FreeRTOS application initializes NVS without erase-on-error and
 runs a health task/events. The Chainlink SPI/GPIO component is compiled for both
 targets but **never initialized by app_main**. No motors, sensors, LCD, serial
