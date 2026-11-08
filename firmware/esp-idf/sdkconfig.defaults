@@ -1,5 +1,4 @@
-# Provisional conservative image settings, NOT a measurement of owner's hardware.
-CONFIG_ESPTOOLPY_FLASHSIZE_2MB=y
+# Shared diagnostic-only partition layout. No FFat or OTA migration implied.
 CONFIG_PARTITION_TABLE_SINGLE_APP=y
-CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
 CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+CONFIG_GPIO_CTRL_FUNC_IN_IRAM=y

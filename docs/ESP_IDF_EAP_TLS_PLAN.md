@@ -1,5 +1,8 @@
 # EAP-TLS investigation and local-only provisioning plan
 
+Milestone 2 adds [S3 time/RTC trust analysis](ESP_IDF_TIME_TRUST.md). The
+authentication component remains unimplemented and inactive on both targets.
+
 Status: **investigated, not implemented or enabled in this milestone**. No
 credentials were available or requested. No Wi-Fi/authentication result is
 claimed from a scaffold build. The prior `eapol_test` result in the brief is
