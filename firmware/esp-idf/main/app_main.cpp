@@ -4,11 +4,14 @@
 #include "esp_log.h"
 #include "scaffold_platform.hpp"
 #include "scaffold_runtime.hpp"
+#include "sdkconfig.h"
 
 extern "C" void app_main()
 {
     constexpr const char *tag = "splitflap_scaffold";
     ESP_LOGI(tag, "Native ESP-IDF scaffold; hardware and networking are not started");
+    ESP_LOGI(tag, "Target %s; Chainlink SPI/GPIO interface is compiled but not initialized",
+             CONFIG_IDF_TARGET);
 
     const esp_err_t result = splitflap::platform::initialize_storage();
     if (result != ESP_OK) {

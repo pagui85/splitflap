@@ -1,5 +1,10 @@
 # Native ESP-IDF migration audit
 
+Milestone 2 retains this source audit and adds native ESP32-S3 builds plus an
+inactive logic-only hardware interface. Current hardware/harness evidence is in
+[the S3 audit](ESP_IDF_S3_HARDWARE.md), with [owner gates](ESP_IDF_S3_BENCH_CHECKLIST.md)
+and [time trust plan](ESP_IDF_TIME_TRUST.md). Neither target runs motor control.
+
 Audited 2026-11-08 from branch `feature/esp-idf-modern`, source commit
 `a8a34c7ab1c9a4acfcc479990eff475af091b8f7`. The mission is in
 [ESP_IDF_WORK_BRIEF.md](ESP_IDF_WORK_BRIEF.md). Existing code and Scott Bezek's
