@@ -25,3 +25,12 @@ sensor.xml
 .vscode
 .nvmrc
 .python_version
+
+# Local-only credentials/provisioning; examples remain tracked.
+/certs/
+/provisioning/
+**/secrets.h
+*.pem
+*.key
+*.p12
+*.pfx
