@@ -80,7 +80,7 @@ M5Stack warns that SDK versions after 5.5.2 may flicker in its U213 example with
 
 ### Memory and display measurements
 
-IDF allocates one aligned 2,048,000-byte RGB565 PSRAM framebuffer. LVGL renders into a 51,200-byte internal strip (20 lines). IDF copies strips and writes back the cache. DSI DMA reads the frame continuously. The single buffer can tear when updates overlap scanout. IDF reports DMA underruns over USB. The display command reports host DMA frame completions, flush errors, free heap and approximate aggregate CPU busy percentage. A PLL lock failure can leave the optional task waiting inside the SDK. Capture the last stage over USB or HTTP and reboot before trying again.
+IDF allocates one aligned 2,048,000-byte RGB565 PSRAM framebuffer. LVGL renders into a 51,200-byte internal strip (20 lines). IDF copies strips and writes back the cache. DSI DMA reads the frame continuously. The single buffer can tear when updates overlap scanout. IDF reports DMA underruns over USB. The display command reports host DMA frame completions, flush errors, free heap and approximate aggregate CPU busy percentage. A PLL lock failure can leave the optional task waiting inside the SDK. The display profile uses a 1 ms FreeRTOS tick so the SDK's PLL wait yields to other tasks. Capture the last stage over USB or HTTP and reboot before trying again.
 
 The 1496 × 928 totals yield a nominal 57.63 Hz. RGB565 scanout averages about 118 MB/s and needs 160 MB/s during active pixels. The 20 MHz DDR ×16 PSRAM raw ceiling is 80 MB/s. The optional profile selects the SDK's 80 MHz early-P4 HEX mode, with a 320 MB/s raw ceiling. Actual sustained bandwidth, CPU, heap, refresh, tearing and underruns require measurement. Compare idle UI, preview typing and Ethernet traffic. The headless build keeps the owner-tested 20 MHz setting. Espressif lists v3.0 as affected by the MSPI-750/751 overlap errata. See the [P4 errata](https://docs.espressif.com/projects/esp-chip-errata/en/latest/esp32p4/esp-chip-errata-en-master-esp32p4.pdf).
 
@@ -120,7 +120,7 @@ python -m esptool --chip esp32p4 --port "$PORT" --baud 115200 write_flash @flash
 python -m serial.tools.miniterm "$PORT" 115200 --eol CR
 ```
 
-For a provisioned U213 already running Milestone 6, use **splitflap-p4-u213-waveshare-7e-app-only**. Run the pinned HTTPS uploader from firmware/esp-idf-bringup. Use the IP from the serial net command and the saved certificate SHA-256. The uploader prompts for the USB-provisioned token and verifies exact-build trial confirmation after reboot. See [OTA acceptance and recovery](ESP_IDF_U213_OTA.md).
+For a provisioned U213 already running Milestone 6, use **splitflap-p4-u213-waveshare-7e-app-only**. Run the pinned HTTPS uploader from firmware/esp-idf-bringup. Reboot to leave scanout off before starting an OTA upload during initial bench testing. Use the IP from the serial net command and the saved certificate SHA-256. The uploader prompts for the USB-provisioned token and verifies exact-build trial confirmation after reboot. See [OTA acceptance and recovery](ESP_IDF_U213_OTA.md).
 
 ```bash
 BOARD_IP=192.168.88.32

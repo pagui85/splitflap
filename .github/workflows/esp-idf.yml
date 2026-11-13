@@ -103,9 +103,12 @@ jobs:
           extra=()
           if [[ "$PROFILE" == p4-u213-waveshare-7e ]]; then
             extra+=(-D SPLITFLAP_WAVESHARE_7E=ON)
+            cp dependencies.waveshare-7e.lock "$RUNNER_TEMP/expected-waveshare.lock"
           fi
           idf.py -B "$build" -D "IDF_TARGET=$TARGET" -D "SDKCONFIG_DEFAULTS=$DEFAULTS" "${extra[@]}" build
-          git diff --exit-code -- dependencies.waveshare-7e.lock
+          if [[ "$PROFILE" == p4-u213-waveshare-7e ]]; then
+            diff "$RUNNER_TEMP/expected-waveshare.lock" dependencies.waveshare-7e.lock
+          fi
           sha256sum "$build/$IMAGE.bin" "$build/$IMAGE.elf" \
             "$build/esp-idf/main/generated/build_metadata.hpp" > "$build/before.sha256"
           idf.py -B "$build" size

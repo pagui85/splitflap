@@ -91,20 +91,19 @@ void update_preview(lv_event_t *)
         return;
     }
     lv_label_set_text_fmt(layout_status, "%u × %u  •  %u / 72", rows, cols, rows * cols);
-    char grid[kCapacity * 2 + 12]{};
+    lv_table_set_row_count(preview, rows);
+    lv_table_set_column_count(preview, cols);
     const char *text = lv_textarea_get_text(input);
     const size_t length = std::strlen(text);
-    size_t out = 0;
+    for (unsigned col = 0; col < cols; ++col)
+        lv_table_set_column_width(preview, col, std::min(72u, 1152u / cols));
     for (unsigned row = 0; row < rows; ++row) {
         for (unsigned col = 0; col < cols; ++col) {
             const size_t index = row * cols + col;
-            grid[out++] = index < length ? text[index] : ' ';
-            if (col + 1 != cols) grid[out++] = ' ';
+            const char glyph[] = {index < length ? text[index] : ' ', '\0'};
+            lv_table_set_cell_value(preview, row, col, glyph);
         }
-        grid[out++] = '\n';
     }
-    grid[out] = '\0';
-    lv_label_set_text(preview, grid);
 }
 
 void change_number(lv_event_t *event)
@@ -240,11 +239,22 @@ void create_dashboard(lv_display_t *display, bool touch_available)
     lv_textarea_set_max_length(input, kCapacity);
     lv_textarea_set_accepted_chars(input, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 .,!?'/-");
     lv_textarea_set_text(input, "SPLITFLAP CONTROLLER");
-    preview = label(simulation, "", &lv_font_montserrat_36);
-    lv_obj_set_pos(preview, 28, 160);
-    lv_obj_set_size(preview, 1150, 440);
-    lv_obj_set_style_text_color(preview, lv_color_hex(0xffbd75), 0);
-    lv_obj_set_style_text_line_space(preview, 9, 0);
+    preview = lv_table_create(simulation);
+    lv_obj_set_pos(preview, 20, 160);
+    lv_obj_set_size(preview, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_remove_flag(preview, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_pad_all(preview, 0, LV_PART_MAIN);
+    lv_obj_set_style_border_width(preview, 0, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(preview, lv_color_hex(0x101821), LV_PART_ITEMS);
+    lv_obj_set_style_border_color(preview, lv_color_hex(0x34475b), LV_PART_ITEMS);
+    lv_obj_set_style_border_width(preview, 1, LV_PART_ITEMS);
+    lv_obj_set_style_border_side(preview, LV_BORDER_SIDE_FULL, LV_PART_ITEMS);
+    lv_obj_set_style_text_color(preview, lv_color_hex(0xffbd75), LV_PART_ITEMS);
+    lv_obj_set_style_text_font(preview, &lv_font_montserrat_24, LV_PART_ITEMS);
+    lv_obj_set_style_text_align(preview, LV_TEXT_ALIGN_CENTER, LV_PART_ITEMS);
+    lv_obj_set_style_pad_hor(preview, 2, LV_PART_ITEMS);
+    lv_obj_set_style_pad_ver(preview, 7, LV_PART_ITEMS);
+    lv_obj_set_style_min_height(preview, 42, LV_PART_ITEMS);
     keys = lv_keyboard_create(simulation);
     lv_obj_set_size(keys, 1160, 260);
     lv_obj_align(keys, LV_ALIGN_BOTTOM_MID, 0, 0);
