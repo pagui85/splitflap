@@ -23,6 +23,12 @@ elseif(IDF_TARGET STREQUAL "esp32p4")
     if(NOT CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG AND NOT CONFIG_ESP_CONSOLE_UART_DEFAULT)
         message(FATAL_ERROR "P4 bring-up requires primary USB Serial/JTAG or default UART0.")
     endif()
+    if(CONFIG_BRINGUP_BOARD_U213 AND (NOT CONFIG_ESP32P4_SELECTS_REV_LESS_V3
+                                    OR NOT CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+                                    OR NOT CONFIG_ESPTOOLPY_FLASHSIZE_16MB
+                                    OR NOT CONFIG_BRINGUP_ETHERNET))
+        message(FATAL_ERROR "U213 requires the early P4, USB Serial/JTAG, 16 MB flash and Ethernet profiles.")
+    endif()
     if(CONFIG_SPIRAM AND (NOT CONFIG_SPIRAM_IGNORE_NOTFOUND OR NOT CONFIG_SPIRAM_USE_CAPS_ALLOC
                           OR CONFIG_SPIRAM_MEMTEST OR CONFIG_SPIRAM_XIP_FROM_PSRAM
                           OR CONFIG_SPIRAM_FETCH_INSTRUCTIONS OR CONFIG_SPIRAM_RODATA

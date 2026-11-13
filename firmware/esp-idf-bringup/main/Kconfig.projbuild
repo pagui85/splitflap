@@ -1,3 +1,10 @@
+config BRINGUP_BOARD_U213
+    bool "M5Stack U213 board profile (use the U213 defaults overlay)"
+    depends on IDF_TARGET_ESP32P4
+    default n
+    help
+        Identifies the M5Stack Unit PoE-P4 build selected through sdkconfig.p4-u213.
+
 menu "Standalone diagnostics (reported pins only; never activated)"
     config BRINGUP_PIN_MOSI
         int "Reported Chainlink MOSI assignment (-1 unassigned)"
