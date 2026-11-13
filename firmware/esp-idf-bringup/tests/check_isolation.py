@@ -11,7 +11,8 @@ root = Path(__file__).resolve().parents[1]
 build = Path(sys.argv[1])
 profile = sys.argv[2] if len(sys.argv) > 2 else "s3"
 p4 = profile != "s3"
-ota = profile in ("p4-u213-ota", "p4-u213-ota-fail")
+display = profile == "p4-u213-waveshare-7e"
+ota = display or profile in ("p4-u213-ota", "p4-u213-ota-fail")
 u213 = profile == "p4-u213-early" or ota
 ethernet = u213 or profile in ("p4-v3-ethernet", "p4-early-ethernet-uart0")
 early = u213 or profile in ("p4-early", "p4-early-ethernet-uart0")
@@ -25,6 +26,8 @@ for source in sources:
                    ("/chainlink_bus/", "/firmware/esp32/", "/firmware/src/", "/esp_wifi/", "/wpa_supplicant/")), source
 assert any(source.endswith("/bringup_main.cpp") for source in sources)
 assert any(source.endswith("/bringup_ethernet/ethernet.cpp") for source in sources) == ethernet
+assert any(source.endswith("/bringup_display/display.cpp") for source in sources) == display
+assert any("/lvgl__lvgl/" in source for source in sources) == display
 
 metadata = (build / "esp-idf/main/generated/build_metadata.hpp").read_text()
 stamp = re.search(r'kBuildUtc\[\] = "([^"]+)"', metadata).group(1)
@@ -46,6 +49,7 @@ else:
     assert "CONFIG_SPIRAM=y" not in config
 
 assert ("CONFIG_BRINGUP_BOARD_U213=y" in config) == u213
+assert ("CONFIG_BRINGUP_WAVESHARE_7E=y" in config) == display
 flash_size = "16MB" if u213 else "2MB"
 assert f'CONFIG_ESPTOOLPY_FLASHSIZE="{flash_size}"' in config
 if u213:
@@ -53,10 +57,12 @@ if u213:
                     "CLK_IN=50", "CLK_OUT=-1", "TX_EN=49", "TXD0=34", "TXD1=35",
                     "CRS_DV=28", "RXD0=29", "RXD1=30"):
         assert f"CONFIG_BRINGUP_ETH_{setting}\n" in config, setting
-    for setting in ("CONFIG_SPIRAM_MODE_HEX=y", "CONFIG_SPIRAM_SPEED=20",
+    for setting in ("CONFIG_SPIRAM_MODE_HEX=y", f"CONFIG_SPIRAM_SPEED={80 if display else 20}",
                     "CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ=360"):
         assert setting + "\n" in config, setting
-    version = "0.6.0-rollback-test" if profile.endswith("-fail") else "0.6.0" if ota else "0.5.0"
+    versions = {"p4-u213-ota-fail": "0.6.0-rollback-test", "p4-u213-ota": "0.6.0",
+                "p4-u213-waveshare-7e": "0.7.0", "p4-u213-early": "0.5.0"}
+    version = versions[profile]
     assert f'CONFIG_APP_PROJECT_VER="{version}"\n' in config
     assert b"board_profile=m5stack_u213_early" in (build / f"{image}.bin").read_bytes()
     flash = json.loads((build / "flasher_args.json").read_text())
@@ -117,6 +123,9 @@ for name in ("esp_eth_driver_install", "httpd_start"):
     assert bool(re.search(rf"\b{name}$", symbols, re.MULTILINE)) == ethernet, name
 for name in ("esp_ota_write", "httpd_ssl_start", "esp_ota_mark_app_valid_cancel_rollback"):
     assert bool(re.search(rf"\b{name}$", symbols, re.MULTILINE)) == ota, name
+for name in ("esp_lcd_new_dsi_bus", "lv_display_create", "esp_lcd_touch_new_i2c_gt911"):
+    assert bool(re.search(rf"\b{name}$", symbols, re.MULTILINE)) == display, name
+assert not re.search(r"\besp_lcd_new_panel_dsi$", symbols, re.MULTILINE), "vendor GPIO7/8 constructor"
 if u213:
     assert re.search(r"\besp_eth_phy_new_ip101$", symbols, re.MULTILINE)
 print(f"PASS: {profile} build isolation, console, memory/revision profile and UTC metadata")

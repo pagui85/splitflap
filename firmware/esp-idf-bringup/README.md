@@ -1,6 +1,6 @@
 # ESP32-S3 standalone bring-up — milestone 3
 
-For ESP32-P4 diagnostics and Ethernet setup, see the [P4 bring-up guide](../../docs/ESP_IDF_P4_BRINGUP.md). Both targets use this project. For the M5Stack U213 Ethernet image, see the [U213 bring-up guide](../../docs/ESP_IDF_U213_BRINGUP.md). For the OTA profile, see the [U213 OTA guide](../../docs/ESP_IDF_U213_OTA.md).
+For ESP32-P4 diagnostics and Ethernet setup, see the [P4 bring-up guide](../../docs/ESP_IDF_P4_BRINGUP.md). Both targets use this project. For the M5Stack U213 Ethernet image, see the [U213 bring-up guide](../../docs/ESP_IDF_U213_BRINGUP.md). For the OTA profile, see the [U213 OTA guide](../../docs/ESP_IDF_U213_OTA.md). For the optional display profile, see the [U213 Waveshare 7E bring-up guide](../../docs/ESP_IDF_U213_WAVESHARE_7E.md).
 
 This separate native ESP-IDF application is ready to build and flash to a
 **standalone ESP32-S3 development board with every external header disconnected**.

@@ -415,6 +415,13 @@ void verify_boot(bool services_ok)
     esp_restart();
 }
 
+#if CONFIG_BRINGUP_WAVESHARE_7E
+void display_state(char *output, std::size_t capacity)
+{
+    std::snprintf(output, capacity, "%s • %s", esp_ota_get_running_partition()->label, state_name());
+}
+#endif
+
 int health_fields(char *output, std::size_t capacity)
 {
     UpdateRecord record{};
