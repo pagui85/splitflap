@@ -116,9 +116,9 @@ RJ45's data-pair center taps and spare pairs through two bridge rectifiers to
 the TPS23753A and isolated flyback supply. Its 5 V secondary `PSU_5V` reaches
 `SYS_5V` through U3. The download USB-C connector's `USB_SUB` VBUS has a
 separate path to `SYS_5V` through U1. The same drawing shows U4 (CH213K) with
-`VI+` on `SYS_5V` and `VO-` on `USB_SUB`. The power paths share
-`SYS_5V`. Use one supply at a time for bring-up, since simultaneous USB
-VBUS and PoE behavior has not been measured. Keep external 5 V and 3.3 V
+`VI+` on `SYS_5V` and `VO-` on `USB_SUB`. The ideal diode orientation shows a potential path from
+`SYS_5V` toward the download port VBUS. Use one supply at a time for
+bring-up. Backfeed and simultaneous-source behavior remain unmeasured. Keep external 5 V and 3.3 V
 disconnected from the underside headers. M5Stack rates the board for
 IEEE 802.3at PoE and up to 6 W. [Power board schematic][power] ·
 [M5Stack specifications][m5-board] · [TRENDnet switch specifications][switch]
@@ -216,10 +216,14 @@ stock protocol. An MCU pin on a carrier cannot disable those registers
 through the stock cable. With all six underside GPIOs allocated, use an
 independent, normally-off motor-supply interlock for a carrier that mates
 through the underside headers alone. If a later design needs a dedicated
-MCU control signal for that interlock, GPIO19 is exposed at Hat2 pin 9
-through the HAT expansion FPC, separate from the underside pair and DSI
-connector. Reserve it provisionally only if the design also mates that
-connector. The interlock needs a hardware default-off state through
+MCU control signal for that interlock, GPIO19 is a candidate on the
+separate HAT interface. Trace `STD_GPIO19` from mainboard J5-10 through
+HAT-board FPC J1-10 to HAT-board 2×8 J2-7 on the V0.2 schematic.
+The product's Hat2-Bus illustration labels that position as pin 9
+because it counts from the opposite end of the connector. Confirm the
+orientation and continuity before assigning a carrier footprint.
+Reserve GPIO19 provisionally only if the design also mates the HAT
+interface. The interlock needs a hardware default-off state through
 reset and power loss. This profile assigns no OE and enables no carrier
 pins. [HAT expansion schematic][hat] ·
 [Existing Buddy and Driver audit](ESP_IDF_S3_HARDWARE.md#driver-side-electrical-and-enable-audit)
