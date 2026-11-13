@@ -1,0 +1,83 @@
+menu "P4 standalone Ethernet"
+    depends on IDF_TARGET_ESP32P4
+
+    config BRINGUP_ETHERNET
+        bool "Enable Ethernet with a verified board schematic"
+        default n
+        help
+            Configure every connected RMII and PHY signal using the board's
+            schematic. Incomplete or conflicting assignments prevent startup.
+
+    if BRINGUP_ETHERNET
+    config BRINGUP_ETH_PHY
+        int "PHY model (1 LAN87xx, 2 RTL8201, 3 IP101, 4 KSZ80xx, 5 DP83848)"
+        range 0 5
+        default 0
+        help
+            0 is unconfigured. Select the driver matching the fitted PHY.
+
+    config BRINGUP_ETH_PHY_ADDR
+        int "PHY address from board straps (-1 unconfigured)"
+        range -1 31
+        default -1
+
+    config BRINGUP_ETH_PHY_RESET
+        int "Active-low PHY reset GPIO (-2 unconfigured, -1 hardware reset only)"
+        range -2 54
+        default -2
+
+    config BRINGUP_ETH_MDC
+        int "MDC GPIO"
+        range -1 54
+        default -1
+
+    config BRINGUP_ETH_MDIO
+        int "MDIO GPIO"
+        range -1 54
+        default -1
+
+    config BRINGUP_ETH_CLK_IN
+        int "50 MHz RMII clock input GPIO"
+        range -1 54
+        default -1
+
+    config BRINGUP_ETH_CLK_OUT
+        int "50 MHz RMII clock output GPIO (-2 unconfigured, -1 external clock)"
+        range -2 54
+        default -2
+        help
+            Set an output only when the schematic shows the P4 supplying the
+            reference clock and an external trace looping it to CLK_IN.
+            Leave at -1 when the PHY or oscillator drives CLK_IN.
+
+    config BRINGUP_ETH_TX_EN
+        int "RMII TX_EN GPIO"
+        range -1 54
+        default -1
+
+    config BRINGUP_ETH_TXD0
+        int "RMII TXD0 GPIO"
+        range -1 54
+        default -1
+
+    config BRINGUP_ETH_TXD1
+        int "RMII TXD1 GPIO"
+        range -1 54
+        default -1
+
+    config BRINGUP_ETH_CRS_DV
+        int "RMII CRS_DV GPIO"
+        range -1 54
+        default -1
+
+    config BRINGUP_ETH_RXD0
+        int "RMII RXD0 GPIO"
+        range -1 54
+        default -1
+
+    config BRINGUP_ETH_RXD1
+        int "RMII RXD1 GPIO"
+        range -1 54
+        default -1
+    endif
+endmenu

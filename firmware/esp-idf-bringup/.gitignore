@@ -1,4 +1,7 @@
 /build*/
 /sdkconfig*
 !/sdkconfig.defaults
+!/sdkconfig.defaults.esp32p4
+!/sdkconfig.p4-early
+!/sdkconfig.p4-uart0
 /managed_components/
