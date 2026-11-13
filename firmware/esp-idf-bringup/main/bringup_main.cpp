@@ -22,6 +22,9 @@
 #include "sdkconfig.h"
 #if CONFIG_IDF_TARGET_ESP32P4
 #include "bringup_ethernet.hpp"
+#if CONFIG_BRINGUP_U213_OTA
+#include "bringup_ota.hpp"
+#endif
 #include "chainlink_pin_policy.hpp"
 #include "driver/gpio.h"
 #if CONFIG_SPIRAM
@@ -227,6 +230,10 @@ int command_handler(int argc, char **argv)
         return 0;
     }
 #endif
+#if CONFIG_BRINGUP_U213_OTA
+    if (argc > 0 && (std::strcmp(argv[0], "ota") == 0 || std::strcmp(argv[0], "config") == 0))
+        return bringup::ota::console_command(argc, argv);
+#endif
     const auto request = bringup::parse_command(argc, argv);
     switch (request.command) {
         case bringup::Command::Info: print_info(); return 0;
@@ -258,6 +265,10 @@ esp_err_t register_commands()
 #if CONFIG_IDF_TARGET_ESP32P4
         {"net", "Show Ethernet configuration, link and DHCP status"},
 #endif
+#if CONFIG_BRINGUP_U213_OTA
+        {"ota", "Show OTA state, or ota provision over USB to create credentials"},
+        {"config", "Show persistent settings, or config probe <uint32> for retention testing"},
+#endif
         {"time", "Show UTC/provisioning state, or: time set YYYY-MM-DDTHH:MM:SSZ (development only)"},
         {"reboot", "Restart; manual time provenance is forgotten, no persistent writes"},
     };
@@ -275,6 +286,9 @@ esp_err_t register_commands()
 
 extern "C" void app_main()
 {
+#if CONFIG_BRINGUP_U213_OTA
+    bringup::ota::initialize();
+#endif
     // Chainlink and Wi-Fi stay inactive in every diagnostic profile.
     if (!clock_state.bootstrap(bringup::kBuildEpoch, static_cast<std::int64_t>(std::time(nullptr)), set_clock))
         ESP_LOGE(kTag, "Clock bootstrap failed; time remains unprovisioned");
@@ -284,7 +298,11 @@ extern "C" void app_main()
     config.max_cmdline_args = 4;
     config.max_history_len = 8;
     config.history_save_path = nullptr;
+#if CONFIG_BRINGUP_U213_OTA
+    config.task_stack_size = 12288; // Certificate and key generation runs on this task.
+#else
     config.task_stack_size = 6144;
+#endif
     esp_console_repl_t *repl = nullptr;
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
     esp_console_dev_usb_serial_jtag_config_t usb = ESP_CONSOLE_DEV_USB_SERIAL_JTAG_CONFIG_DEFAULT();
@@ -293,7 +311,13 @@ extern "C" void app_main()
     esp_console_dev_uart_config_t uart = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     esp_err_t result = esp_console_new_repl_uart(&uart, &config, &repl);
 #endif
-    if (result != ESP_OK) { ESP_LOGE(kTag, "Console REPL setup failed: %s", esp_err_to_name(result)); return; }
+    if (result != ESP_OK) {
+        ESP_LOGE(kTag, "Console REPL setup failed: %s", esp_err_to_name(result));
+#if CONFIG_BRINGUP_U213_OTA
+        bringup::ota::verify_boot(false);
+#endif
+        return;
+    }
     result = register_commands();
     if (result == ESP_OK) {
 #if CONFIG_IDF_TARGET_ESP32P4
@@ -303,6 +327,9 @@ extern "C" void app_main()
         std::puts("Type help or info. Standalone only: keep every external header disconnected.");
         result = esp_console_start_repl(repl);
     }
+#if CONFIG_BRINGUP_U213_OTA
+    bringup::ota::verify_boot(result == ESP_OK && bringup::ethernet::services_ok());
+#endif
     if (result != ESP_OK) {
         ESP_LOGE(kTag, "Console startup failed: %s", esp_err_to_name(result));
         repl->del(repl);

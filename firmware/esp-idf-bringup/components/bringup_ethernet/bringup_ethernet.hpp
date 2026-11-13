@@ -7,6 +7,7 @@
 namespace bringup::ethernet {
 #if CONFIG_BRINGUP_ETHERNET
 void start();
+bool services_ok();
 void print_status();
 bool uses_pin(int pin);
 #else

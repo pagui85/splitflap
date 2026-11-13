@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 import re
+import struct
 import subprocess
 import sys
 
@@ -10,7 +11,8 @@ root = Path(__file__).resolve().parents[1]
 build = Path(sys.argv[1])
 profile = sys.argv[2] if len(sys.argv) > 2 else "s3"
 p4 = profile != "s3"
-u213 = profile == "p4-u213-early"
+ota = profile in ("p4-u213-ota", "p4-u213-ota-fail")
+u213 = profile == "p4-u213-early" or ota
 ethernet = u213 or profile in ("p4-v3-ethernet", "p4-early-ethernet-uart0")
 early = u213 or profile in ("p4-early", "p4-early-ethernet-uart0")
 uart = profile in ("s3", "p4-early-ethernet-uart0")
@@ -52,16 +54,51 @@ if u213:
                     "CRS_DV=28", "RXD0=29", "RXD1=30"):
         assert f"CONFIG_BRINGUP_ETH_{setting}\n" in config, setting
     for setting in ("CONFIG_SPIRAM_MODE_HEX=y", "CONFIG_SPIRAM_SPEED=20",
-                    "CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ=360", 'CONFIG_APP_PROJECT_VER="0.5.0"'):
+                    "CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ=360"):
         assert setting + "\n" in config, setting
+    version = "0.6.0-rollback-test" if profile.endswith("-fail") else "0.6.0" if ota else "0.5.0"
+    assert f'CONFIG_APP_PROJECT_VER="{version}"\n' in config
     assert b"board_profile=m5stack_u213_early" in (build / f"{image}.bin").read_bytes()
     flash = json.loads((build / "flasher_args.json").read_text())
     assert flash["flash_settings"] == {"flash_mode": "dio", "flash_size": "16MB", "flash_freq": "40m"}
-    assert flash["flash_files"] == {
+    expected_files = {
         "0x2000": "bootloader/bootloader.bin",
         "0x8000": "partition_table/partition-table.bin",
         "0x10000": f"{image}.bin",
     }
+    if ota:
+        expected_files["0xe000"] = "ota_data_initial.bin"
+        assert (build / "ota_data_initial.bin").read_bytes() == b"\xff" * 8192
+        raw_table = (build / "partition_table/partition-table.bin").read_bytes()
+        partitions = {}
+        for magic, kind, subtype, address, size, label, flags in struct.iter_unpack("<HBBII16sI", raw_table):
+            if magic != 0x50AA:
+                break
+            partitions[label.rstrip(b"\0").decode("ascii")] = (kind, subtype, address, size, flags)
+        assert partitions == {
+            "nvs": (1, 2, 0x9000, 0x5000, 0),
+            "otadata": (1, 0, 0xE000, 0x2000, 0),
+            "factory": (0, 0, 0x10000, 0x300000, 0),
+            "ota_0": (0, 0x10, 0x310000, 0x400000, 0),
+            "ota_1": (0, 0x11, 0x710000, 0x400000, 0),
+            "splitcfg": (1, 2, 0xB10000, 0x10000, 0),
+            "otakeys": (1, 2, 0xB20000, 0x10000, 0),
+        }
+        assert "CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y" in config
+        assert 'CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_u213_ota.csv"' in config
+        assert "CONFIG_ESP_HTTPS_SERVER_ENABLE=y" in config
+        assert ("CONFIG_BRINGUP_OTA_TEST_FAIL=y" in config) == profile.endswith("-fail")
+        image_bytes = (build / f"{image}.bin").read_bytes()
+        icon = (root / "components/bringup_ethernet/assets/favicon.ico").read_bytes()
+        reserved, kind, count = struct.unpack_from("<HHH", icon)
+        assert reserved == 0 and kind == 1 and count > 0
+        assert len(icon) >= 6 + count * 16
+        for index in range(count):
+            length, offset = struct.unpack_from("<II", icon, 6 + index * 16 + 8)
+            assert length > 0 and 6 + count * 16 <= offset <= len(icon) - length
+        assert icon in image_bytes, "complete ICO payload must be embedded"
+        assert image_bytes[288:].startswith(b"splitflap-u213-ota:v1\0")
+    assert flash["flash_files"] == expected_files
 
 for role in ("MOSI", "MISO", "CLOCK", "LATCH", "OE"):
     assert f"CONFIG_BRINGUP_PIN_{role}=-1" in config
@@ -78,6 +115,8 @@ for name in ("spi_bus_initialize", "spi_device_polling_transmit"):
     assert not re.search(rf"\b{name}$", symbols, re.MULTILINE), name
 for name in ("esp_eth_driver_install", "httpd_start"):
     assert bool(re.search(rf"\b{name}$", symbols, re.MULTILINE)) == ethernet, name
+for name in ("esp_ota_write", "httpd_ssl_start", "esp_ota_mark_app_valid_cancel_rollback"):
+    assert bool(re.search(rf"\b{name}$", symbols, re.MULTILINE)) == ota, name
 if u213:
     assert re.search(r"\besp_eth_phy_new_ip101$", symbols, re.MULTILINE)
 print(f"PASS: {profile} build isolation, console, memory/revision profile and UTC metadata")
