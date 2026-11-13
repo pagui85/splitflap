@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "bringup_ethernet.hpp"
+#if CONFIG_BRINGUP_WAVESHARE_7E
+#include "bringup_display.hpp"
+#endif
 #if CONFIG_BRINGUP_U213_OTA
 #include "bringup_ota.hpp"
 #endif
@@ -177,7 +180,11 @@ esp_err_t health(httpd_req_t *request)
 {
     const Status status = read_status();
     const esp_app_desc_t &app = *esp_app_get_description();
+#if CONFIG_BRINGUP_WAVESHARE_7E
+    char json[1280];
+#else
     char json[896];
+#endif
     int size = std::snprintf(json, sizeof(json),
         "{\"firmware\":\"%s\",\"version\":\"%s\",\"link\":%s,\"dhcp_ready\":%s,"
         "\"speed_mbps\":%u,\"mac\":\"%02x:%02x:%02x:%02x:%02x:%02x\","
@@ -192,6 +199,12 @@ esp_err_t health(httpd_req_t *request)
     if (extra < 0 || static_cast<unsigned>(extra) >= sizeof(json) - size)
         return httpd_resp_send_err(request, HTTPD_500_INTERNAL_SERVER_ERROR, "status unavailable");
     size += extra;
+#endif
+#if CONFIG_BRINGUP_WAVESHARE_7E
+    const int display = bringup::display::health_fields(json + size, sizeof(json) - size);
+    if (display < 0 || static_cast<unsigned>(display) >= sizeof(json) - size)
+        return httpd_resp_send_err(request, HTTPD_500_INTERNAL_SERVER_ERROR, "status unavailable");
+    size += display;
 #endif
     if (static_cast<unsigned>(size) + 2 >= sizeof(json))
         return httpd_resp_send_err(request, HTTPD_500_INTERNAL_SERVER_ERROR, "status unavailable");
@@ -346,6 +359,16 @@ void start()
     if (https != ESP_OK) ESP_LOGW(kTag, "HTTPS OTA unavailable: %s", esp_err_to_name(https));
 #endif
 }
+
+#if CONFIG_BRINGUP_WAVESHARE_7E
+void display_status(char *summary, std::size_t summary_size, char *ip, std::size_t ip_size)
+{
+    const auto status = read_status();
+    std::snprintf(summary, summary_size, status.ready ? "Link up • %u Mb/s • DHCP" :
+                  status.connected ? "Link up • DHCP pending" : "Link down", status.speed_mbps);
+    std::snprintf(ip, ip_size, IPSTR, IP2STR(&status.ip.ip));
+}
+#endif
 
 bool services_ok() { return startup_result == ESP_OK && server != nullptr; }
 

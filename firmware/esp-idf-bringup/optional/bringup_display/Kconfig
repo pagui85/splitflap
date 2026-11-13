@@ -1,0 +1,20 @@
+menu "U213 Waveshare 7E diagnostics"
+    config BRINGUP_WAVESHARE_7E
+        bool
+        default y if BRINGUP_U213_OTA
+
+    config BRINGUP_WAVESHARE_ROTATION
+        int "Landscape rotation (0 or 180 degrees)"
+        range 0 180
+        default 0
+
+    config BRINGUP_WAVESHARE_TOUCH_SWAP_XY
+        bool "Swap native touch axes before scaling"
+        default n
+    config BRINGUP_WAVESHARE_TOUCH_MIRROR_X
+        bool "Mirror native touch X before display rotation"
+        default n
+    config BRINGUP_WAVESHARE_TOUCH_MIRROR_Y
+        bool "Mirror native touch Y before display rotation"
+        default n
+endmenu

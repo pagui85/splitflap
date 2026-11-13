@@ -7,3 +7,5 @@
 !/sdkconfig.p4-u213-ota
 !/sdkconfig.p4-uart0
 /managed_components/
+!/sdkconfig.p4-u213-waveshare-7e
+/dependencies.lock

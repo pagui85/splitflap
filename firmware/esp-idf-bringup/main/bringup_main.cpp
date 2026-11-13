@@ -22,6 +22,9 @@
 #include "sdkconfig.h"
 #if CONFIG_IDF_TARGET_ESP32P4
 #include "bringup_ethernet.hpp"
+#if CONFIG_BRINGUP_WAVESHARE_7E
+#include "bringup_display.hpp"
+#endif
 #if CONFIG_BRINGUP_U213_OTA
 #include "bringup_ota.hpp"
 #endif
@@ -57,6 +60,9 @@ const char *p4_pin_status(std::size_t index)
     if (pin == -1) return "unassigned";
     if (!GPIO_IS_VALID_GPIO(pin) || (index != 1 && !GPIO_IS_VALID_OUTPUT_GPIO(pin)))
         return "CONFLICT_invalid_gpio";
+#if CONFIG_BRINGUP_WAVESHARE_7E
+    if (pin == 0 || pin == 1) return "CONFLICT_display_system_i2c";
+#endif
     if (bringup::ethernet::uses_pin(pin)) return "CONFLICT_configured_ethernet";
     if (splitflap::chainlink::p4_reserved_pin(pin)) return "CONFLICT_usb_strap_or_uart";
     for (std::size_t other = 0; other < sizeof(kPins) / sizeof(kPins[0]); ++other) {
@@ -98,6 +104,10 @@ void print_pins()
     std::puts("console=USB_Serial_JTAG board USB routing applies");
 #else
     std::puts("console=UART0 TX37/RX38 115200");
+#endif
+#if CONFIG_BRINGUP_WAVESHARE_7E
+    std::puts("J6 display I2C: SDA=GPIO0 SCL=GPIO1, DSI=fixed PHY, reset/IRQ/boost=unused");
+    std::puts("Underside GPIO8..13 remain untouched by display and Chainlink.");
 #endif
     std::puts("Protected: USB24..27 and straps34..38. Board-specific memory/peripheral routing still requires review.");
 #else
@@ -234,6 +244,9 @@ int command_handler(int argc, char **argv)
     if (argc > 0 && (std::strcmp(argv[0], "ota") == 0 || std::strcmp(argv[0], "config") == 0))
         return bringup::ota::console_command(argc, argv);
 #endif
+#if CONFIG_BRINGUP_WAVESHARE_7E
+    if (argc > 0 && std::strcmp(argv[0], "display") == 0) return bringup::display::console(argc, argv);
+#endif
     const auto request = bringup::parse_command(argc, argv);
     switch (request.command) {
         case bringup::Command::Info: print_info(); return 0;
@@ -268,6 +281,9 @@ esp_err_t register_commands()
 #if CONFIG_BRINGUP_U213_OTA
         {"ota", "Show OTA state, or ota provision over USB to create credentials"},
         {"config", "Show persistent settings, or config probe <uint32> for retention testing"},
+#endif
+#if CONFIG_BRINGUP_WAVESHARE_7E
+        {"display", "Display status, or display start experimental for the early-P4 bench test"},
 #endif
         {"time", "Show UTC/provisioning state, or: time set YYYY-MM-DDTHH:MM:SSZ (development only)"},
         {"reboot", "Restart; manual time provenance is forgotten, no persistent writes"},

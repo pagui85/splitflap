@@ -3,6 +3,10 @@ set(bringup_deps console esp_system esp_hw_support esp_common spi_flash
 if(IDF_TARGET STREQUAL "esp32p4")
     list(APPEND bringup_deps esp_psram esp_driver_gpio bringup_ethernet bringup_ota)
 endif()
+idf_build_get_property(display_profile SPLITFLAP_WAVESHARE_7E)
+if(display_profile)
+    list(APPEND bringup_deps bringup_display)
+endif()
 idf_component_register(SRCS "bringup_main.cpp" "diagnostic_core.cpp"
     PRIV_REQUIRES ${bringup_deps})
 target_compile_features(${COMPONENT_LIB} PRIVATE cxx_std_17)
