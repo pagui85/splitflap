@@ -2,7 +2,7 @@ name: Native ESP-IDF targets
 
 on:
   push:
-    branches: [feature/esp-idf-modern, feature/esp-idf-s3, feature/esp-idf-s3-bringup, feature/esp-idf-p4]
+    branches: [feature/esp-idf-modern, feature/esp-idf-s3, feature/esp-idf-s3-bringup, feature/esp-idf-p4, feature/esp-idf-u213]
     paths:
       - 'firmware/esp-idf/**'
       - 'firmware/esp-idf-bringup/**'
@@ -65,6 +65,10 @@ jobs:
             target: esp32p4
             image: splitflap_p4_bringup
             defaults: 'sdkconfig.defaults;sdkconfig.p4-early;sdkconfig.p4-uart0;tests/sdkconfig.p4-ethernet-compile'
+          - profile: p4-u213-early
+            target: esp32p4
+            image: splitflap_p4_bringup
+            defaults: 'sdkconfig.defaults;sdkconfig.p4-early;sdkconfig.p4-u213'
     runs-on: ubuntu-24.04
     container: espressif/idf:v5.5.6
     timeout-minutes: 20
@@ -91,8 +95,8 @@ jobs:
             "$build/esp-idf/main/generated/build_metadata.hpp" > "$build/after.sha256"
           diff "$build/before.sha256" "$build/after.sha256"
           python tests/check_isolation.py "$build" "$PROFILE"
-      - name: Package flash files for standalone P4
-        if: matrix.profile == 'p4-v3' || matrix.profile == 'p4-early'
+      - name: Package P4 flash files
+        if: matrix.profile == 'p4-v3' || matrix.profile == 'p4-early' || matrix.profile == 'p4-u213-early'
         shell: bash
         working-directory: firmware/esp-idf-bringup
         env:
@@ -106,8 +110,8 @@ jobs:
           cd flash-package
           sha256sum flash_args bootloader/bootloader.bin partition_table/partition-table.bin \
             splitflap_p4_bringup.bin > SHA256SUMS
-      - name: Upload standalone P4 flash package
-        if: matrix.profile == 'p4-v3' || matrix.profile == 'p4-early'
+      - name: Upload P4 flash package
+        if: matrix.profile == 'p4-v3' || matrix.profile == 'p4-early' || matrix.profile == 'p4-u213-early'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: splitflap-${{ matrix.profile }}-usb-serial-jtag

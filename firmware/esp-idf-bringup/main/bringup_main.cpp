@@ -174,6 +174,9 @@ void print_psram()
 void print_info()
 {
     std::printf("--- standalone %s bring-up info ---\n", kChipName);
+#if CONFIG_BRINGUP_BOARD_U213
+    std::puts("board_profile=m5stack_u213_early");
+#endif
     esp_chip_info_t chip{};
     esp_chip_info(&chip);
     std::printf("chip=%s model_id=%d silicon_revision=%u.%u raw_revision=%u cores=%u\n",

@@ -7,6 +7,27 @@ Ethernet and the HTTP server are off in the standalone profiles. The console
 shares the S3 clock provenance rules. Build time and manual UTC are for
 diagnostics, with no authorization for EAP-TLS.
 
+## Owner-verified milestone 4 boot
+
+The owner flashed the generic early-silicon USB Serial/JTAG artifact on the
+**M5Stack Unit PoE-P4 (U213)**. The owner captured the full ROM and ESP-IDF
+boot logs and confirmed the following on physical hardware.
+
+| Check | Observed result |
+| --- | --- |
+| Chip and CPU | ESP32-P4 v1.3 accepted by the v0.0–v1.99 image, 2 cores at 360 MHz |
+| Flash | 16 MiB physical, JEDEC `0x464018`. The generic image's 2 MiB header produced the expected capacity warning |
+| PSRAM | 32 MiB initialized at 20 MHz |
+| USB Serial/JTAG | Linux `/dev/ttyACM0` |
+| Build | ESP-IDF v5.5.6, `splitflap_p4_bringup/0.4.0` |
+| Console and reset | All diagnostic commands exercised, manual UTC provisioning and software reboot passed |
+| Warm reboot | System time retained, manual provenance cleared, `retained_system_time_unverified` reported |
+| Safety | Ethernet off, Chainlink GPIO and SPI inactive, no boot errors or unexpected resets |
+
+The [U213 Ethernet guide](ESP_IDF_U213_BRINGUP.md) covers the dedicated
+16 MiB image and the remaining Ethernet, PoE and Chainlink electrical
+validation.
+
 ## Identify the board and serial port
 
 1. Record the maker, exact model, PCB revision, P4 and PHY markings, and USB
@@ -291,7 +312,8 @@ image checksums and the P4 revision ranges. The GitHub Actions matrix uses the
 same SDK commit and includes all these profiles. It keeps the synthetic
 Ethernet fixture in compile-only jobs.
 
-Board boot, serial transport, flash and PSRAM behavior, PHY link, DHCP,
-reconnect and HTTP still need the owner’s hardware validation. Keep the
+The owner validated standalone U213 boot, serial transport, flash and PSRAM
+with the milestone 4 image. PHY link, DHCP, reconnect, HTTP and PoE still
+need hardware validation with the U213 Ethernet profile. Keep the
 Chainlink hardware disconnected until the exact board schematic and
 voltage, power and signal assignments have been reviewed.
