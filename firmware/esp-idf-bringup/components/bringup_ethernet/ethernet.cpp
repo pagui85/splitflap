@@ -84,10 +84,10 @@ esp_err_t validate_pins()
     uint64_t assigned = 0;
     for (const auto &pin : pins) {
         if (pin.gpio == -1 && pin.optional) continue;
-        // Reserve both console paths. Other strapping pins can be documented
+        // Reserve both USB pairs and UART0. Other straps can be documented
         // RMII data pins, so check the schematic and reset levels before use.
         if (!GPIO_IS_VALID_GPIO(pin.gpio) || (pin.output && !GPIO_IS_VALID_OUTPUT_GPIO(pin.gpio)) ||
-            pin.gpio == 24 || pin.gpio == 25 || pin.gpio == 37 || pin.gpio == 38 || !valid_mux(pin)) {
+            (pin.gpio >= 24 && pin.gpio <= 27) || pin.gpio == 37 || pin.gpio == 38 || !valid_mux(pin)) {
             ESP_LOGE(kTag, "%s has missing, reserved or unsupported GPIO %d", pin.signal, pin.gpio);
             return ESP_ERR_INVALID_ARG;
         }
@@ -163,7 +163,8 @@ void on_ip(void *, esp_event_base_t, int32_t event, void *data)
         link.store(Link::DhcpReady);
         ESP_LOGI(kTag, "DHCP IPv4 " IPSTR " gateway " IPSTR " health=http://" IPSTR "/health",
                  IP2STR(&lease.ip_info.ip), IP2STR(&lease.ip_info.gw), IP2STR(&lease.ip_info.ip));
-    } else if (event == IP_EVENT_ETH_LOST_IP && link.load() == Link::DhcpReady) {
+    } else if (event == IP_EVENT_ETH_LOST_IP && link.load() == Link::DhcpReady &&
+               static_cast<const ip_event_got_ip_t *>(data)->esp_netif == netif) {
         link.store(Link::Up);
         ESP_LOGI(kTag, "DHCP lease lost; waiting for IPv4");
     }

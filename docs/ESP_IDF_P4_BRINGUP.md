@@ -101,13 +101,33 @@ Both profiles use a DIO 40 MHz image with a 2 MiB flash header and 1 MiB
 factory partition. `flash_physical_bytes` is the detected JEDEC capacity.
 `flash_image_access_limit_bytes` is the capacity addressable by this image.
 The optional 20 MHz in-package PSRAM probe uses the pinned SDK driver and
-requires no configured capacity. A missing or failed probe leaves the console
-in internal RAM. The SDK reports capacity in `psram_detected_bytes`, successful
+requires no configured capacity. When the SDK reports a missing chip or returns a probe error, the console
+uses internal RAM. If the SDK halts on an unexpected memory ID or density,
+use the PSRAM-off recovery step below. The SDK reports capacity in `psram_detected_bytes`, successful
 initialization in `initialization`, and the usable external heap in
 `heap_total_bytes` and `heap_free_bytes` on the PSRAM line. A zero result
 with an initialization error calls for the boot log and board documentation.
 This profile skips the SDK's boot memory test, which aborts on failure.
 The diagnostics report memory discovery and heap availability.
+
+### Flash a GitHub Actions build
+
+The native ESP-IDF Actions run on PR #4 publishes `splitflap-p4-v3-usb-serial-jtag`
+and `splitflap-p4-early-usb-serial-jtag`. Download and extract the package for the
+revision reported by `chip_id`. Both packages use the native USB Serial/JTAG
+console. Build from source for a UART0 console or verified Ethernet wiring.
+
+From inside the extracted package, with the pinned SDK environment active:
+
+```bash
+sha256sum -c SHA256SUMS
+python -m esptool --chip esp32p4 image_info --version 2 splitflap_p4_bringup.bin
+python -m esptool --chip esp32p4 --port "$PORT" --baud 115200 write_flash @flash_args
+python -m serial.tools.miniterm "$PORT" 115200 --eol CR
+```
+
+Exit miniterm with Ctrl+]. Use the source-build route for IDF Monitor and symbol
+decoding.
 
 ### Expected console output
 
@@ -168,7 +188,7 @@ an unsupported PHY or a different MAC interface requires its own driver work.
 
 Cross-check the reset pulse, PHY power, address straps, and clock direction
 against the board and PHY documentation. Some P4 RMII mux choices also serve
-as boot straps. Verify their reset levels on the schematic. USB24/25 and
+as boot straps. Verify their reset levels on the schematic. Both USB pairs on GPIO24–27 and
 UART0 37/38 are reserved by the diagnostic pin validator. Check the board
 for additional pin uses. Incomplete assignments, duplicates or unsupported
 RMII mux selections cause an error before the MAC or PHY driver touches GPIO.
@@ -250,10 +270,10 @@ Partition table binaries are 3,072 bytes.
 | Scaffold ESP32-S3 | 183,408 | 20,464 | Pass |
 | Scaffold ESP32-P4 v3.x | 193,840 | 23,328 | Pass |
 | Standalone S3 UART0 | 290,000 | 20,464 | Pass |
-| Standalone P4 v3.x USB Serial/JTAG | 290,768 | 23,424 | Pass |
-| Standalone early P4 USB Serial/JTAG | 288,160 | 22,688 | Pass |
-| P4 v3.x USB Serial/JTAG, Ethernet compile fixture | 541,136 | 23,424 | Pass |
-| Early P4 UART0, Ethernet compile fixture | 564,368 | 22,592 | Pass |
+| Standalone P4 v3.x USB Serial/JTAG | 290,784 | 23,424 | Pass |
+| Standalone early P4 USB Serial/JTAG | 288,176 | 22,688 | Pass |
+| P4 v3.x USB Serial/JTAG, Ethernet compile fixture | 541,168 | 23,424 | Pass |
+| Early P4 UART0, Ethernet compile fixture | 564,384 | 22,592 | Pass |
 
 From the repo root, the following host checks passed.
 

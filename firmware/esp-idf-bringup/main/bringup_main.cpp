@@ -92,11 +92,11 @@ void print_pins()
                     kPinNames[i], kPins[i], p4_pin_status(i));
     }
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-    std::puts("console=USB_Serial_JTAG GPIO24/25");
+    std::puts("console=USB_Serial_JTAG board USB routing applies");
 #else
     std::puts("console=UART0 TX37/RX38 115200");
 #endif
-    std::puts("Protected: USB24/25 and straps34..38. Board-specific memory/peripheral routing still requires review.");
+    std::puts("Protected: USB24..27 and straps34..38. Board-specific memory/peripheral routing still requires review.");
 #else
     for (std::size_t i = 0; i < 5; ++i) {
         const bool conflict = bringup::pin_conflict(kPins, 5, i);

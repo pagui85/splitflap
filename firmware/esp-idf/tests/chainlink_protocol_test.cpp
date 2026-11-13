@@ -58,6 +58,6 @@ int main()
         assert(!allowed_pin(Chip::Esp32P4, pin, false));
         assert(!allowed_pin(Chip::Esp32P4, pin, true));
     }
-    for (int pin : {24, 25, 34, 35, 36, 37, 38}) assert(p4_reserved_pin(pin));
+    for (int pin : {24, 25, 26, 27, 34, 35, 36, 37, 38}) assert(p4_reserved_pin(pin));
     std::cout << "PASS: Chainlink golden vectors, coil guard, loopback isolation and pin policy\n";
 }

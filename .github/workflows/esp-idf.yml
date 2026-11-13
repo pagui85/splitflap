@@ -91,3 +91,25 @@ jobs:
             "$build/esp-idf/main/generated/build_metadata.hpp" > "$build/after.sha256"
           diff "$build/before.sha256" "$build/after.sha256"
           python tests/check_isolation.py "$build" "$PROFILE"
+      - name: Package flash files for standalone P4
+        if: matrix.profile == 'p4-v3' || matrix.profile == 'p4-early'
+        shell: bash
+        working-directory: firmware/esp-idf-bringup
+        env:
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          cd "build-$PROFILE"
+          mkdir -p flash-package/bootloader flash-package/partition_table
+          cp flash_args splitflap_p4_bringup.bin flash-package/
+          cp bootloader/bootloader.bin flash-package/bootloader/
+          cp partition_table/partition-table.bin flash-package/partition_table/
+          cd flash-package
+          sha256sum flash_args bootloader/bootloader.bin partition_table/partition-table.bin \
+            splitflap_p4_bringup.bin > SHA256SUMS
+      - name: Upload standalone P4 flash package
+        if: matrix.profile == 'p4-v3' || matrix.profile == 'p4-early'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: splitflap-${{ matrix.profile }}-usb-serial-jtag
+          path: firmware/esp-idf-bringup/build-${{ matrix.profile }}/flash-package/
+          if-no-files-found: error

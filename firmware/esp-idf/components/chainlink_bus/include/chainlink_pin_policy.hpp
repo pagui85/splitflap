@@ -5,8 +5,8 @@ enum class Chip { Esp32, Esp32S3, Esp32P4 };
 
 constexpr bool p4_reserved_pin(int pin)
 {
-    // USB Serial/JTAG and bootstraps (including UART0 TX/RX).
-    return pin == 24 || pin == 25 || (pin >= 34 && pin <= 38);
+    // Both full-speed USB pairs and bootstraps (including UART0 TX/RX).
+    return (pin >= 24 && pin <= 27) || (pin >= 34 && pin <= 38);
 }
 
 constexpr bool allowed_pin(Chip chip, int pin, bool output)
