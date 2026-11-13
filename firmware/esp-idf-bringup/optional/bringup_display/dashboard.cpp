@@ -242,7 +242,8 @@ void create_dashboard(lv_display_t *display, bool touch_available)
     preview = lv_table_create(simulation);
     lv_obj_set_pos(preview, 20, 160);
     lv_obj_set_size(preview, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-    lv_obj_remove_flag(preview, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_remove_flag(preview, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_remove_flag(preview, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_pad_all(preview, 0, LV_PART_MAIN);
     lv_obj_set_style_border_width(preview, 0, LV_PART_MAIN);
     lv_obj_set_style_bg_color(preview, lv_color_hex(0x101821), LV_PART_ITEMS);
