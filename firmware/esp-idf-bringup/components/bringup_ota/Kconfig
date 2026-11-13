@@ -1,0 +1,11 @@
+menu "U213 Ethernet OTA"
+    config BRINGUP_U213_OTA
+        bool "Enable authenticated U213 Ethernet OTA"
+        depends on BRINGUP_BOARD_U213 && BRINGUP_ETHERNET
+        default n
+
+    config BRINGUP_OTA_TEST_FAIL
+        bool "Reject pending OTA at startup for rollback testing"
+        depends on BRINGUP_U213_OTA
+        default n
+endmenu

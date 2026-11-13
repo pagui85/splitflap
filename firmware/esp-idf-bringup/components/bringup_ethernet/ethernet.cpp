@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "bringup_ethernet.hpp"
+#if CONFIG_BRINGUP_U213_OTA
+#include "bringup_ota.hpp"
+#endif
 
 #include <atomic>
 #include <cinttypes>
@@ -174,25 +177,50 @@ esp_err_t health(httpd_req_t *request)
 {
     const Status status = read_status();
     const esp_app_desc_t &app = *esp_app_get_description();
-    char json[512];
-    const int size = std::snprintf(json, sizeof(json),
+    char json[896];
+    int size = std::snprintf(json, sizeof(json),
         "{\"firmware\":\"%s\",\"version\":\"%s\",\"link\":%s,\"dhcp_ready\":%s,"
         "\"speed_mbps\":%u,\"mac\":\"%02x:%02x:%02x:%02x:%02x:%02x\","
-        "\"ip\":\"" IPSTR "\",\"gateway\":\"" IPSTR "\",\"dns\":[\"" IPSTR "\",\"" IPSTR "\"]}\n",
+        "\"ip\":\"" IPSTR "\",\"gateway\":\"" IPSTR "\",\"dns\":[\"" IPSTR "\",\"" IPSTR "\"]",
         app.project_name, app.version, status.connected ? "true" : "false", status.ready ? "true" : "false",
         status.speed_mbps, status.mac[0], status.mac[1], status.mac[2], status.mac[3], status.mac[4], status.mac[5],
         IP2STR(&status.ip.ip), IP2STR(&status.ip.gw), IP2STR(&status.dns[0]), IP2STR(&status.dns[1]));
     if (size < 0 || static_cast<unsigned>(size) >= sizeof(json))
         return httpd_resp_send_err(request, HTTPD_500_INTERNAL_SERVER_ERROR, "status unavailable");
+#if CONFIG_BRINGUP_U213_OTA
+    const int extra = bringup::ota::health_fields(json + size, sizeof(json) - size);
+    if (extra < 0 || static_cast<unsigned>(extra) >= sizeof(json) - size)
+        return httpd_resp_send_err(request, HTTPD_500_INTERNAL_SERVER_ERROR, "status unavailable");
+    size += extra;
+#endif
+    if (static_cast<unsigned>(size) + 2 >= sizeof(json))
+        return httpd_resp_send_err(request, HTTPD_500_INTERNAL_SERVER_ERROR, "status unavailable");
+    json[size++] = '}';
+    json[size++] = '\n';
     httpd_resp_set_type(request, "application/json");
     if (!status.ready) httpd_resp_set_status(request, "503 Service Unavailable");
     return httpd_resp_send(request, json, size);
 }
 
+#if CONFIG_BRINGUP_U213_OTA
+extern const char favicon_start[] asm("_binary_favicon_ico_start");
+extern const char favicon_end[] asm("_binary_favicon_ico_end");
+
+esp_err_t favicon(httpd_req_t *request)
+{
+    httpd_resp_set_type(request, "image/x-icon");
+    return httpd_resp_send(request, favicon_start, favicon_end - favicon_start);
+}
+#endif
+
 void start_http()
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.lru_purge_enable = true;
+#if CONFIG_BRINGUP_U213_OTA
+    config.max_open_sockets = 3;
+    config.stack_size = 6144;
+#endif
     esp_err_t result = httpd_start(&server, &config);
     if (result == ESP_OK) {
         httpd_uri_t route{};
@@ -200,6 +228,13 @@ void start_http()
         route.method = HTTP_GET;
         route.handler = health;
         result = httpd_register_uri_handler(server, &route);
+#if CONFIG_BRINGUP_U213_OTA
+        if (result == ESP_OK) {
+            route.uri = "/favicon.ico";
+            route.handler = favicon;
+            result = httpd_register_uri_handler(server, &route);
+        }
+#endif
         if (result != ESP_OK) {
             httpd_stop(server);
             server = nullptr;
@@ -301,9 +336,18 @@ bool uses_pin(int gpio)
 void start()
 {
     startup_result = configure();
-    if (startup_result == ESP_OK) start_http();
-    else ESP_LOGE(kTag, "Ethernet startup failed: %s; standalone console available", esp_err_to_name(startup_result));
+    if (startup_result != ESP_OK) {
+        ESP_LOGE(kTag, "Ethernet startup failed: %s; standalone console available", esp_err_to_name(startup_result));
+        return;
+    }
+    start_http();
+#if CONFIG_BRINGUP_U213_OTA
+    const auto https = bringup::ota::start_https(health);
+    if (https != ESP_OK) ESP_LOGW(kTag, "HTTPS OTA unavailable: %s", esp_err_to_name(https));
+#endif
 }
+
+bool services_ok() { return startup_result == ESP_OK && server != nullptr; }
 
 void print_status()
 {

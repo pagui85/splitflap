@@ -1,0 +1,8 @@
+# Name,   Type, SubType, Offset,   Size,   Flags
+nvs,      data, nvs,     0x9000,   0x5000,
+otadata,  data, ota,     0xe000,   0x2000,
+factory,  app,  factory, 0x10000,  3M,
+ota_0,    app,  ota_0,   0x310000, 4M,
+ota_1,    app,  ota_1,   0x710000, 4M,
+splitcfg, data, nvs,     0xb10000, 0x10000,
+otakeys,  data, nvs,     0xb20000, 0x10000,

@@ -6,6 +6,21 @@ console used in milestone 4. The board can be tested by itself. Leave the
 carrier, Chainlink cables, motor supplies, display and other peripherals
 disconnected for these tests.
 
+## Owner-verified milestone 5 Ethernet test
+
+The owner ran v0.5.0 on the physical U213 v1.3, with a 16 MiB image
+configuration and 32 MiB PSRAM initialized at 20 MHz. The IP101GRI
+negotiated 100 Mb/s. DHCP assigned `192.168.88.32` with gateway
+`192.168.88.1` and DNS `192.168.88.5`. A browser received valid JSON
+from `/health`.
+
+Disconnect cleared link, speed, DHCP, IP, gateway and DNS. Reconnect
+restored DHCP about one second after link-up, and HTTP recovered without
+a reboot. Chainlink GPIO and SPI stayed inactive. The test used USB
+power and the owner's unmanaged switch. VLAN 30 and PoE-only operation
+remain pending the managed switch. See the
+[OTA setup and bench checklist](ESP_IDF_U213_OTA.md) for milestone 6.
+
 ## Verified board configuration
 
 The V0.2 mainboard schematic, sheet 3, identifies U11 as IP101GRI. R47 pulls
@@ -243,7 +258,7 @@ ribbon slot, connector access and bend beneath the carrier. [M5Stack LCD and tou
 | Isolation and reproducibility | PHY driver and HTTP linked, Chainlink SPI calls absent, all proposed pins unassigned, app/ELF/UTC hashes stable across `size` and a no-change build |
 | Regression and host tests | Both host suites and all five prior standalone/compile profiles passed locally |
 | Physical milestone 4 | Owner confirmed boot, memory, console, UTC provisioning and warm reboot on the U213 |
-| Physical milestone 5 | U213 Ethernet image boot, DHCP, health, reconnect and PoE await owner testing. Chainlink electrical validation remains a later step |
+| Physical milestone 5 | Owner verified U213 Ethernet boot, DHCP, health and reconnect over USB power. VLAN 30, PoE-only and Chainlink electrical validation remain pending |
 
 [m5-board]: https://docs.m5stack.com/en/unit/Unit_PoE-P4
 [main]: https://m5stack-doc.oss-cn-shenzhen.aliyuncs.com/1217/SCH_StickPoE_SCH_Main_V0.2_20250829_2026_02_02_17_17_04.pdf

@@ -2,7 +2,7 @@ name: Native ESP-IDF targets
 
 on:
   push:
-    branches: [feature/esp-idf-modern, feature/esp-idf-s3, feature/esp-idf-s3-bringup, feature/esp-idf-p4, feature/esp-idf-u213]
+    branches: [feature/esp-idf-modern, feature/esp-idf-s3, feature/esp-idf-s3-bringup, feature/esp-idf-p4, feature/esp-idf-u213, feature/esp-idf-u213-ota]
     paths:
       - 'firmware/esp-idf/**'
       - 'firmware/esp-idf-bringup/**'
@@ -46,6 +46,8 @@ jobs:
         run: bash firmware/esp-idf/tests/run_host_tests.sh
       - name: Check standalone console parsing, clock provenance and metadata
         run: bash firmware/esp-idf-bringup/tests/run_host_tests.sh
+      - name: Check Linux OTA uploader
+        run: python3 firmware/esp-idf-bringup/tests/test_ota_uploader.py
   standalone-bringup:
     strategy:
       fail-fast: false
@@ -69,6 +71,14 @@ jobs:
             target: esp32p4
             image: splitflap_p4_bringup
             defaults: 'sdkconfig.defaults;sdkconfig.p4-early;sdkconfig.p4-u213'
+          - profile: p4-u213-ota
+            target: esp32p4
+            image: splitflap_p4_bringup
+            defaults: 'sdkconfig.defaults;sdkconfig.p4-early;sdkconfig.p4-u213;sdkconfig.p4-u213-ota'
+          - profile: p4-u213-ota-fail
+            target: esp32p4
+            image: splitflap_p4_bringup
+            defaults: 'sdkconfig.defaults;sdkconfig.p4-early;sdkconfig.p4-u213;sdkconfig.p4-u213-ota;tests/sdkconfig.p4-u213-ota-fail'
     runs-on: ubuntu-24.04
     container: espressif/idf:v5.5.6
     timeout-minutes: 20
@@ -96,7 +106,7 @@ jobs:
           diff "$build/before.sha256" "$build/after.sha256"
           python tests/check_isolation.py "$build" "$PROFILE"
       - name: Package P4 flash files
-        if: matrix.profile == 'p4-v3' || matrix.profile == 'p4-early' || matrix.profile == 'p4-u213-early'
+        if: matrix.profile == 'p4-v3' || matrix.profile == 'p4-early' || matrix.profile == 'p4-u213-early' || matrix.profile == 'p4-u213-ota'
         shell: bash
         working-directory: firmware/esp-idf-bringup
         env:
@@ -107,13 +117,26 @@ jobs:
           cp flash_args splitflap_p4_bringup.bin flash-package/
           cp bootloader/bootloader.bin flash-package/bootloader/
           cp partition_table/partition-table.bin flash-package/partition_table/
+          if [[ "$PROFILE" == p4-u213-ota ]]; then
+            cp ota_data_initial.bin flash-package/
+          fi
           cd flash-package
-          sha256sum flash_args bootloader/bootloader.bin partition_table/partition-table.bin \
-            splitflap_p4_bringup.bin > SHA256SUMS
+          files=(flash_args bootloader/bootloader.bin partition_table/partition-table.bin splitflap_p4_bringup.bin)
+          if [[ "$PROFILE" == p4-u213-ota ]]; then
+            files+=(ota_data_initial.bin)
+          fi
+          sha256sum "${files[@]}" > SHA256SUMS
       - name: Upload P4 flash package
-        if: matrix.profile == 'p4-v3' || matrix.profile == 'p4-early' || matrix.profile == 'p4-u213-early'
+        if: matrix.profile == 'p4-v3' || matrix.profile == 'p4-early' || matrix.profile == 'p4-u213-early' || matrix.profile == 'p4-u213-ota'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: splitflap-${{ matrix.profile }}-usb-serial-jtag
           path: firmware/esp-idf-bringup/build-${{ matrix.profile }}/flash-package/
+          if-no-files-found: error
+      - name: Upload app-only U213 OTA image
+        if: matrix.profile == 'p4-u213-ota' || matrix.profile == 'p4-u213-ota-fail'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: splitflap-${{ matrix.profile }}-app-only
+          path: firmware/esp-idf-bringup/build-${{ matrix.profile }}/splitflap_p4_bringup.bin
           if-no-files-found: error
