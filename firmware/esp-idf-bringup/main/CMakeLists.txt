@@ -1,6 +1,10 @@
+set(bringup_deps console esp_system esp_hw_support esp_common spi_flash
+                 efuse heap freertos log esp_app_format)
+if(IDF_TARGET STREQUAL "esp32p4")
+    list(APPEND bringup_deps esp_psram esp_driver_gpio bringup_ethernet)
+endif()
 idf_component_register(SRCS "bringup_main.cpp" "diagnostic_core.cpp"
-    PRIV_REQUIRES console esp_system esp_hw_support esp_common spi_flash
-                  efuse heap freertos log)
+    PRIV_REQUIRES ${bringup_deps})
 target_compile_features(${COMPONENT_LIB} PRIVATE cxx_std_17)
 # Only a pure policy header is shared. Do not discover/link the Chainlink HAL.
 target_include_directories(${COMPONENT_LIB} PRIVATE

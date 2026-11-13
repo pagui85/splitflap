@@ -1,16 +1,16 @@
-# Native ESP-IDF diagnostic application — ESP32 and ESP32-S3
+# Native ESP-IDF scaffold — ESP32, ESP32-S3 and ESP32-P4
 
 For **standalone USB-UART board identification and an interactive console**, use
 the separate [milestone 3 bring-up application](../esp-idf-bringup/README.md).
-This milestone 2 application and its inactive HAL remain unchanged.
+For P4 board testing and Ethernet, use the [P4 bring-up guide](../../docs/ESP_IDF_P4_BRINGUP.md).
 
 This isolated C++/FreeRTOS application initializes NVS without erase-on-error and
-runs a health task/events. The Chainlink SPI/GPIO component is compiled for both
+runs a health task/events. The Chainlink SPI/GPIO component is compiled for all three
 targets but **never initialized by app_main**. No motors, sensors, LCD, serial
 protocol, Wi-Fi, HTTP or OTA service is started. No hardware functionality is
 claimed from compilation. Original PlatformIO files/dependencies are unchanged.
 
-## Reproduce both builds
+## Reproduce the builds
 
 Use Espressif ESP-IDF **v5.5.6**, SDK commit
 `880a203ae603d08a94d06aa01e0d6761958e5e9e`. The 5.5 maintenance line remains
@@ -22,7 +22,7 @@ Install Git, Python, host compiler and the SDK's documented prerequisites.
 git clone --branch v5.5.6 --depth 1 --recursive --shallow-submodules \
   https://github.com/espressif/esp-idf.git "$HOME/esp/esp-idf-v5.5.6"
 cd "$HOME/esp/esp-idf-v5.5.6"
-./install.sh esp32,esp32s3
+./install.sh esp32,esp32s3,esp32p4
 . ./export.sh
 
 cd "$HOME/Projects/splitflap/firmware/esp-idf"
@@ -33,6 +33,10 @@ idf.py -B build-esp32 size
 idf.py -B build-esp32s3 set-target esp32s3
 idf.py -B build-esp32s3 build
 idf.py -B build-esp32s3 size
+
+# P4 v3.x compile check. Use the standalone bring-up project on the board.
+idf.py -B build-esp32p4 -D IDF_TARGET=esp32p4 build
+idf.py -B build-esp32p4 size
 ```
 
 CMake places `sdkconfig` inside each build directory, so targets do not overwrite
@@ -40,7 +44,7 @@ one another's configuration. ESP-IDF loads `sdkconfig.defaults` and then
 `sdkconfig.defaults.<target>` automatically. Use a fresh build directory for a
 clean configuration; existing sdkconfig choices can override changed defaults.
 The old `idf.py set-target esp32 && idf.py build` default-directory workflow also
-works; separate directories are recommended when retaining both targets.
+works; separate directories are recommended when retaining multiple targets.
 No certificate, Arduino core, managed component or splitflap submodule is needed.
 
 | Setting | ESP32 | ESP32-S3 |

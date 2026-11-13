@@ -16,7 +16,9 @@ constexpr const char *kTag = "chainlink_bus";
 bool valid_pin(int pin, bool output)
 {
     if (!GPIO_IS_VALID_GPIO(pin) || (output && !GPIO_IS_VALID_OUTPUT_GPIO(pin))) return false;
-#if CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32P4
+    return allowed_pin(Chip::Esp32P4, pin, output);
+#elif CONFIG_IDF_TARGET_ESP32S3
     return allowed_pin(Chip::Esp32S3, pin, output);
 #else
     return allowed_pin(Chip::Esp32, pin, output);

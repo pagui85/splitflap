@@ -1,0 +1,2 @@
+# Use this overlay when the board exposes a USB-to-UART0 bridge.
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y

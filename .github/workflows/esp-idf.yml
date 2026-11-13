@@ -2,7 +2,7 @@ name: Native ESP-IDF targets
 
 on:
   push:
-    branches: [feature/esp-idf-modern, feature/esp-idf-s3, feature/esp-idf-s3-bringup]
+    branches: [feature/esp-idf-modern, feature/esp-idf-s3, feature/esp-idf-s3-bringup, feature/esp-idf-p4]
     paths:
       - 'firmware/esp-idf/**'
       - 'firmware/esp-idf-bringup/**'
@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [esp32, esp32s3]
+        target: [esp32, esp32s3, esp32p4]
     runs-on: ubuntu-24.04
     container: espressif/idf:v5.5.6
     timeout-minutes: 20
@@ -46,25 +46,48 @@ jobs:
         run: bash firmware/esp-idf/tests/run_host_tests.sh
       - name: Check standalone console parsing, clock provenance and metadata
         run: bash firmware/esp-idf-bringup/tests/run_host_tests.sh
-  s3-bringup:
+  standalone-bringup:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {profile: s3, target: esp32s3, image: splitflap_s3_bringup, defaults: sdkconfig.defaults}
+          - {profile: p4-v3, target: esp32p4, image: splitflap_p4_bringup, defaults: sdkconfig.defaults}
+          - profile: p4-early
+            target: esp32p4
+            image: splitflap_p4_bringup
+            defaults: 'sdkconfig.defaults;sdkconfig.p4-early'
+          - profile: p4-v3-ethernet
+            target: esp32p4
+            image: splitflap_p4_bringup
+            defaults: 'sdkconfig.defaults;tests/sdkconfig.p4-ethernet-compile'
+          - profile: p4-early-ethernet-uart0
+            target: esp32p4
+            image: splitflap_p4_bringup
+            defaults: 'sdkconfig.defaults;sdkconfig.p4-early;sdkconfig.p4-uart0;tests/sdkconfig.p4-ethernet-compile'
     runs-on: ubuntu-24.04
     container: espressif/idf:v5.5.6
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Build isolated standalone S3 diagnostics
+      - name: Build and verify standalone diagnostic profile
         shell: bash
         working-directory: firmware/esp-idf-bringup
+        env:
+          PROFILE: ${{ matrix.profile }}
+          TARGET: ${{ matrix.target }}
+          IMAGE: ${{ matrix.image }}
+          DEFAULTS: ${{ matrix.defaults }}
         run: |
           . "$IDF_PATH/export.sh"
           test "$(git -C "$IDF_PATH" rev-parse HEAD)" = "880a203ae603d08a94d06aa01e0d6761958e5e9e"
-          idf.py -B build-s3-bringup set-target esp32s3
-          idf.py -B build-s3-bringup build
-          sha256sum build-s3-bringup/splitflap_s3_bringup.bin build-s3-bringup/splitflap_s3_bringup.elf \
-            build-s3-bringup/esp-idf/main/generated/build_metadata.hpp > build-s3-bringup/before.sha256
-          idf.py -B build-s3-bringup size
-          idf.py -B build-s3-bringup build
-          sha256sum build-s3-bringup/splitflap_s3_bringup.bin build-s3-bringup/splitflap_s3_bringup.elf \
-            build-s3-bringup/esp-idf/main/generated/build_metadata.hpp > build-s3-bringup/after.sha256
-          diff build-s3-bringup/before.sha256 build-s3-bringup/after.sha256
-          python tests/check_isolation.py build-s3-bringup
+          build="build-$PROFILE"
+          idf.py -B "$build" -D "IDF_TARGET=$TARGET" -D "SDKCONFIG_DEFAULTS=$DEFAULTS" build
+          sha256sum "$build/$IMAGE.bin" "$build/$IMAGE.elf" \
+            "$build/esp-idf/main/generated/build_metadata.hpp" > "$build/before.sha256"
+          idf.py -B "$build" size
+          idf.py -B "$build" build
+          sha256sum "$build/$IMAGE.bin" "$build/$IMAGE.elf" \
+            "$build/esp-idf/main/generated/build_metadata.hpp" > "$build/after.sha256"
+          diff "$build/before.sha256" "$build/after.sha256"
+          python tests/check_isolation.py "$build" "$PROFILE"
